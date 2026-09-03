@@ -1,0 +1,9 @@
+{
+  "common.home": "Home",
+  "common.save": "Save",
+  "common.back": "Back to list",
+  "common.delete": "Delete",
+  "common.empty": "No data",
+  "common.status.draft": "Draft",
+  "common.status.published": "Published"
+}

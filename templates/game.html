@@ -1,0 +1,16 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>WebSocket Protobuf 示例</title><link rel="stylesheet" href="/static/styles/app.css"></head><body><main><p><a href="/">首页</a></p><h1>WebSocket + Protobuf 示例</h1><p id="status">正在加载协议...</p><label>房间 <input id="room" value="demo"></label> <button id="join">加入房间</button> <button id="ping">发送心跳</button><p><input id="text" value="你好，房间"></p><button id="broadcast">发送广播</button><pre id="output"></pre></main><script src="https://cdn.jsdelivr.net/npm/protobufjs@7.4.0/dist/protobuf.min.js"></script><script>
+const output = document.querySelector('#output'), status = document.querySelector('#status');
+const write = value => { output.textContent += value + '\n'; };
+protobuf.load('/proto/game/v1/game.proto').then(root => {
+  const Envelope = root.lookupType('game.v1.Envelope');
+  const socket = new WebSocket(`ws://${location.host}/ws/game`); socket.binaryType = 'arraybuffer';
+  socket.onopen = () => { status.textContent = '已连接'; };
+  socket.onclose = () => { status.textContent = '连接已关闭'; };
+  socket.onerror = () => { status.textContent = '连接失败'; };
+  socket.onmessage = event => { const message = Envelope.decode(new Uint8Array(event.data)); write(JSON.stringify(Envelope.toObject(message, {longs: String, defaults: true}))); };
+  const send = payload => { const message = Envelope.create({version: 1, messageId: 1, requestId: String(Date.now()), ...payload}); socket.send(Envelope.encode(message).finish()); };
+  document.querySelector('#join').onclick = () => send({joinRoom: {roomId: document.querySelector('#room').value}});
+  document.querySelector('#ping').onclick = () => send({ping: {timestampMs: Date.now()}});
+  document.querySelector('#broadcast').onclick = () => send({roomBroadcast: {roomId: document.querySelector('#room').value, text: document.querySelector('#text').value}});
+}).catch(error => { status.textContent = '协议加载失败'; write(error.toString()); });
+</script></body></html>

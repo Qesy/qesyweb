@@ -1,0 +1,26 @@
+syntax = "proto3";
+
+package game.v1;
+
+option go_package = "github.com/Qesy/QesyWeb/proto/game/v1;gamev1";
+
+message Envelope {
+  uint32 version = 1;
+  uint32 message_id = 2;
+  string request_id = 3;
+  oneof payload {
+    Ping ping = 10;
+    Pong pong = 11;
+    JoinRoom join_room = 12;
+    LeaveRoom leave_room = 13;
+    RoomBroadcast room_broadcast = 14;
+    Error error = 15;
+  }
+}
+
+message Ping { int64 timestamp_ms = 1; }
+message Pong { int64 timestamp_ms = 1; }
+message JoinRoom { string room_id = 1; }
+message LeaveRoom { string room_id = 1; }
+message RoomBroadcast { string room_id = 1; string text = 2; }
+message Error { string code = 1; string message = 2; }

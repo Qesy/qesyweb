@@ -42,7 +42,7 @@ go run ./cmd/migrate
 go run ./cmd/web
 ```
 
-新闻地址：`http://localhost:8080/news`。
+前台新闻地址：`http://localhost:8080/news`，只展示已发布新闻；后台新闻管理地址：`http://localhost:8080/admin/news`。
 
 ## 后台管理员登录
 
@@ -65,6 +65,7 @@ RESEND_FROM=QesyWeb <noreply@example.com>
 ```
 
 登录后台后，点击“发送 Resend 测试邮件”即可验证邮件配置。邮件通过 Resend API 发送，封装在 `internal/mail` 中；管理员收件邮箱来自数据库中的管理员记录。
+如果没有设置 `RESEND_ENABLED=true`，系统会明确返回“邮件发送未启用”，不会把未发送误报为成功。
 
 ## 多语言示例
 
@@ -93,6 +94,8 @@ locales/
 
 ## 代码应该放在哪里
 
+- `internal/news/frontend`：前台新闻列表和详情 Handler，只展示已发布内容。
+- `internal/news/handler`：后台新闻管理 Handler，负责 CRUD 和表单。
 - `handler`：处理 HTTP 参数、校验和模板，不直接访问数据库。
 - `service`：处理业务规则、事务边界和缓存失效。
 - `repository`：处理数据库持久化。普通单表操作使用 QesySQL 链式 API。
@@ -213,6 +216,8 @@ static/
 ## 按业务组织代码
 
 每个业务模块按 `handler`、`service`、`repository`、`model` 组织。一个页面需要同时读取新闻和用户时，可以在该业务的 Service 中组合多个 Repository；如果为了页面查询方便需要在 `news/repository` 中增加用户查询方法，也可以保留，这是业务边界优先的取舍。不要为了追求目录“绝对不重复”而让 Handler 直接跨层访问数据库；重复的查询封装应在确认多个业务都复用后，再提取到共享模块。
+
+新闻同时有前台和后台页面时，推荐复用 `model`、`service`、`repository`，分开访问端 Handler 和路由：前台使用 `/news`、`/news/{id}`，后台使用 `/admin/news`、`/admin/news/{id}`，后台路由统一挂载管理员 Session 中间件。
 
 ## 测试
 

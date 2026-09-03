@@ -1,0 +1,56 @@
+# 本地配置和敏感信息
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# 日志和运行时数据
+logs/
+*.log
+*.pid
+*.sock
+
+# Go 构建产物和测试文件
+bin/
+dist/
+build/
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+coverage.out
+coverage.html
+
+# Go 本地缓存和依赖副本
+.gocache/
+.gomodcache/
+vendor/
+.qesysql-reference/
+
+# 临时文件
+.tmp/
+tmp/
+*.tmp
+*.temp
+*.swp
+*.swo
+*~
+
+# IDE 和编辑器
+.idea/
+.vscode/
+*.iml
+.fleet/
+
+# 操作系统文件
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# 本地数据库文件
+*.db
+*.sqlite
+*.sqlite3

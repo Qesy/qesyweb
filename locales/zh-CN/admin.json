@@ -1,0 +1,12 @@
+{
+  "admin.login.title": "管理员登录",
+  "admin.login.username": "用户名",
+  "admin.login.password": "密码",
+  "admin.login.captcha": "验证码",
+  "admin.login.submit": "登录",
+  "admin.login.invalid": "用户名、密码或验证码错误",
+  "admin.dashboard.title": "后台管理首页",
+  "admin.dashboard.welcome": "欢迎回来",
+  "admin.logout": "退出登录",
+  "admin.email.test": "发送 Resend 测试邮件"
+}

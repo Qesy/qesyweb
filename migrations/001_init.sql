@@ -1,0 +1,20 @@
+CREATE TABLE IF NOT EXISTS news (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    title VARCHAR(200) NOT NULL,
+    slug VARCHAR(200) NOT NULL UNIQUE,
+    summary VARCHAR(500) NOT NULL DEFAULT '',
+    content TEXT NOT NULL,
+    status VARCHAR(20) NOT NULL DEFAULT 'draft',
+    published_at DATETIME NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_news_status_created (status, created_at)
+);
+
+CREATE TABLE IF NOT EXISTS news_audit_logs (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    news_id BIGINT NOT NULL,
+    action VARCHAR(50) NOT NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_news_audit_news (news_id)
+);

@@ -1,0 +1,12 @@
+{
+  "admin.login.title": "Administrator Login",
+  "admin.login.username": "Username",
+  "admin.login.password": "Password",
+  "admin.login.captcha": "Captcha",
+  "admin.login.submit": "Sign in",
+  "admin.login.invalid": "Invalid username, password, or captcha",
+  "admin.dashboard.title": "Admin Dashboard",
+  "admin.dashboard.welcome": "Welcome back",
+  "admin.logout": "Sign out",
+  "admin.email.test": "Send Resend test email"
+}

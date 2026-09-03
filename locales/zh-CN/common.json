@@ -1,0 +1,9 @@
+{
+  "common.home": "首页",
+  "common.save": "保存",
+  "common.back": "返回列表",
+  "common.delete": "删除",
+  "common.empty": "暂无数据",
+  "common.status.draft": "草稿",
+  "common.status.published": "已发布"
+}
