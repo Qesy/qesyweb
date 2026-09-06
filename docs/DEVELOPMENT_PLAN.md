@@ -154,7 +154,7 @@ docs/                     开发与使用文档
 3. Redis：连接检查、集中 Key 定义、命名空间规范、读取/写入/删除辅助和 TTL 策略。
 4. HTTP：Chi 路由分组、健康检查、异常恢复、请求日志、请求 ID、静态资源、模板渲染和错误处理。
 5. 模板：布局、局部模板、页面模板和明确的视图模型。
-6. 日志：基于 `log/slog` 的结构化文本日志、按天文件切换、访问日志、保留期限和敏感字段脱敏。
+6. 日志：基于标准库 `log` 的文本日志、按天文件切换、访问日志、保留期限和敏感字段脱敏。
 7. 定时任务：集中注册、时区设置、任务超时、异常恢复、同一任务防重入、优雅停止和执行日志。
 8. Worker：任务接口、内存队列示例、固定数量 Worker、取消、超时、重试策略接口和优雅停止。
 9. WebSocket：基于二进制帧的 Protobuf 通讯、连接管理、鉴权、心跳、请求响应、房间广播和关闭处理。
@@ -164,10 +164,10 @@ docs/                     开发与使用文档
 
 ## 日志规范
 
-使用 Go 标准库 `log/slog`，默认采用可直接阅读的 `TextHandler` 格式，而不是 JSON。每一行包含时间、级别、消息和结构化字段，例如：
+使用 Go 标准库 `log`，输出可直接阅读的文本格式。每一行包含时间、消息和 `key=value` 字段，例如：
 
 ```text
-time=2026-09-02T17:30:00+08:00 level=INFO msg="新闻已创建" component=news news_id=42 request_id=abc123
+2026/09/02 17:30:00 component=news 新闻已创建 news_id=42 request_id=abc123
 ```
 
 日志目录和文件名：
@@ -188,7 +188,6 @@ time=2026-09-02T17:30:00+08:00 level=INFO msg="新闻已创建" component=news n
 
 ```text
 LOG_DIR=./logs
-LOG_LEVEL=info
 LOG_TIMEZONE=Asia/Shanghai
 LOG_RETENTION_DAYS=30
 LOG_CONSOLE=true
@@ -199,9 +198,9 @@ LOG_ADD_SOURCE=false
 
 1. 每条业务日志尽量包含 `component`；请求链路额外包含 `request_id`。
 2. HTTP 访问日志在请求结束后记录，保证包含最终状态码和耗时。
-3. 错误使用 `logger.Error`，并通过 `error` 字段记录错误内容。
+3. 错误使用 `logger.Printf`，并通过 `error=...` 字段记录错误内容。
 4. 不记录密码、Authorization、Cookie、Token、完整身份证号、支付信息和原始 WebSocket 消息体。
-5. `handler`、`service`、`repository`、Worker 和 WebSocket Service 均通过构造函数接收 `*slog.Logger`；使用 `With` 预置模块字段，避免可变全局 Logger。
+5. `handler`、`service`、`repository`、Worker 和 WebSocket Service 使用标准库 `*log.Logger`；通过 `logging.Logger.With` 预置模块前缀，避免可变全局 Logger。
 
 ## 新闻参考模块
 

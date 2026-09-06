@@ -22,9 +22,9 @@ type Config struct {
 type AppConfig struct{ Name, Env string }
 type HTTPConfig struct{ Addr string }
 type LogConfig struct {
-	Dir, Level, Timezone string
-	RetentionDays        int
-	Console, AddSource   bool
+	Dir, Timezone      string
+	RetentionDays      int
+	Console, AddSource bool
 }
 type MySQLConfig struct {
 	Enabled          bool
@@ -83,7 +83,7 @@ func Load() (Config, error) {
 	return Config{
 		App:       AppConfig{env("APP_NAME", "qesyweb"), env("APP_ENV", "development")},
 		HTTP:      HTTPConfig{env("HTTP_ADDR", ":8080")},
-		Log:       LogConfig{env("LOG_DIR", "./logs"), env("LOG_LEVEL", "info"), env("LOG_TIMEZONE", time.Local.String()), retention, boolEnv("LOG_CONSOLE", true), boolEnv("LOG_ADD_SOURCE", false)},
+		Log:       LogConfig{env("LOG_DIR", "./logs"), env("LOG_TIMEZONE", time.Local.String()), retention, boolEnv("LOG_CONSOLE", true), boolEnv("LOG_ADD_SOURCE", false)},
 		MySQL:     MySQLConfig{boolEnv("MYSQL_ENABLED", false), env("MYSQL_DRIVER", "mysql"), env("MYSQL_DSN", ""), maxOpen, maxIdle},
 		Redis:     RedisConfig{boolEnv("REDIS_ENABLED", false), env("REDIS_ADDR", "127.0.0.1:6379"), env("REDIS_PASSWORD", ""), redisDB},
 		Scheduler: SchedulerConfig{boolEnv("SCHEDULER_ENABLED", true), env("SCHEDULER_TIMEZONE", "Asia/Shanghai")},

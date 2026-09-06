@@ -2,7 +2,7 @@ package httpx
 
 import (
 	"bufio"
-	"log/slog"
+	"log"
 	"net"
 	"net/http"
 	"time"
@@ -40,7 +40,7 @@ func (w *statusWriter) Write(body []byte) (int, error) {
 	w.bytes += n
 	return n, err
 }
-func AccessLog(logger *slog.Logger) func(http.Handler) http.Handler {
+func AccessLog() func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			started := time.Now()
@@ -49,7 +49,7 @@ func AccessLog(logger *slog.Logger) func(http.Handler) http.Handler {
 			if sw.status == 0 {
 				sw.status = http.StatusOK
 			}
-			logger.Info("HTTP 请求", "request_id", GetRequestID(r.Context()), "method", r.Method, "path", r.URL.Path, "status", sw.status, "bytes", sw.bytes, "duration_ms", time.Since(started).Milliseconds(), "remote", r.RemoteAddr)
+			log.Printf("HTTP 请求 request_id=%q method=%s path=%q status=%d bytes=%d duration_ms=%d remote=%q", GetRequestID(r.Context()), r.Method, r.URL.Path, sw.status, sw.bytes, time.Since(started).Milliseconds(), r.RemoteAddr)
 		})
 	}
 }

@@ -2,14 +2,12 @@ package main
 
 import (
 	"html/template"
-	"log/slog"
 	"net/http"
 
 	"github.com/Qesy/QesyWeb/config"
 	"github.com/Qesy/QesyWeb/internal/infra/auth"
 	"github.com/Qesy/QesyWeb/internal/infra/cache"
 	"github.com/Qesy/QesyWeb/internal/infra/httpx"
-	"github.com/Qesy/QesyWeb/internal/infra/logging"
 	"github.com/Qesy/QesyWeb/internal/modules/admin"
 	"github.com/Qesy/QesyWeb/internal/modules/news"
 	"github.com/Qesy/QesyWeb/internal/modules/news/frontend"
@@ -22,10 +20,9 @@ import (
 )
 
 type routerDeps struct {
-	cfg          config.Config
-	templates    *template.Template
-	logs         *logging.Logger
-	logger       *slog.Logger
+	cfg       config.Config
+	templates *template.Template
+
 	db           *qesysql.DB
 	redisCache   *cache.Cache
 	sessions     *auth.Manager
@@ -35,7 +32,7 @@ type routerDeps struct {
 func newRouter(deps routerDeps) chi.Router {
 	router := chi.NewRouter()
 	router.Use(httpx.RequestID)
-	router.Use(httpx.AccessLog(deps.logs.Access))
+	//router.Use(httpx.AccessLog(deps.logs.Access))
 	router.Get("/health", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		_, _ = w.Write([]byte(`{"status":"ok"}`))
@@ -56,15 +53,10 @@ func newRouter(deps routerDeps) chi.Router {
 		adminRouter.With(deps.sessions.Require).Post("/logout", deps.adminHandler.Logout)
 		adminRouter.With(deps.sessions.Require).Post("/email/test", deps.adminHandler.SendTestMail)
 	})
-	if deps.db != nil {
-		newsService := service.New(repository.New(deps.db), deps.redisCache)
-		news.RegisterPublicRoutes(router, frontend.New(newsService, deps.templates))
-		news.RegisterAdminRoutes(router.With(deps.sessions.Require), newsHandler.New(newsService, deps.templates))
-	} else {
-		router.Get("/news", func(w http.ResponseWriter, r *http.Request) {
-			http.Error(w, "请在 .env 中开启 MYSQL_ENABLED 后使用新闻示例", http.StatusServiceUnavailable)
-		})
-	}
-	router.Handle("/ws/game", gamews.New(deps.logger.With("component", "websocket")))
+
+	newsService := service.New(repository.New(deps.db), deps.redisCache)
+	news.RegisterPublicRoutes(router, frontend.New(newsService, deps.templates))
+	news.RegisterAdminRoutes(router.With(deps.sessions.Require), newsHandler.New(newsService, deps.templates))
+	router.Handle("/ws/game", gamews.New())
 	return router
 }

@@ -2,7 +2,6 @@ package websocket
 
 import (
 	"context"
-	"log/slog"
 	"net/http"
 	"sync"
 	"time"
@@ -18,13 +17,12 @@ type Client struct {
 	room string
 }
 type Server struct {
-	logger *slog.Logger
-	mu     sync.RWMutex
-	rooms  map[string]map[*Client]struct{}
+	mu    sync.RWMutex
+	rooms map[string]map[*Client]struct{}
 }
 
-func New(logger *slog.Logger) *Server {
-	return &Server{logger: logger, rooms: make(map[string]map[*Client]struct{})}
+func New() *Server {
+	return &Server{rooms: make(map[string]map[*Client]struct{})}
 }
 func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	conn, err := websocket.Accept(w, r, &websocket.AcceptOptions{OriginPatterns: []string{"localhost", "127.0.0.1", "[::1]"}})

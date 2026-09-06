@@ -12,7 +12,7 @@ import (
 )
 
 func TestPingPongProtobuf(t *testing.T) {
-	server := httptest.NewServer(New(nil))
+	server := httptest.NewServer(New())
 	defer server.Close()
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"html/template"
+	"log"
 	"net/http"
 	"os"
 	"os/signal"
@@ -33,19 +34,17 @@ func main() {
 		RetentionDays: cfg.Log.RetentionDays,
 		Console:       cfg.Log.Console,
 		AddSource:     cfg.Log.AddSource,
-		Level:         cfg.Log.Level,
 	})
 	if err != nil {
 		panic(err)
 	}
 	defer logs.Close()
 	logs.ConfigureStandardLog()
-	logger := logs.With("web")
 
 	templates := template.Must(template.ParseGlob("web/templates/*.html"))
 	languages, err := i18n.LoadDir("web/locales", "en-US")
 	if err != nil {
-		logger.Error("语言包加载失败", "error", err)
+		log.Printf("语言包加载失败 error=%v", err)
 		return
 	}
 
@@ -53,7 +52,7 @@ func main() {
 	defer startupCancel()
 	db, err := database.Open(startupCtx, cfg.MySQL)
 	if err != nil {
-		logger.Error("MySQL 初始化失败", "error", err)
+		log.Printf("MySQL 初始化失败 error=%v", err)
 		return
 	}
 	if db != nil {
@@ -61,7 +60,7 @@ func main() {
 	}
 	redisCache, err := cache.Open(startupCtx, cfg.Redis)
 	if err != nil {
-		logger.Error("Redis 初始化失败", "error", err)
+		log.Printf("Redis 初始化失败 error=%v", err)
 		return
 	}
 	if redisCache != nil {
@@ -78,9 +77,9 @@ func main() {
 		pool.Start(ctx)
 		defer pool.Stop()
 	}
-	sched, err := startScheduler(cfg.Scheduler, pool, logger)
+	sched, err := startScheduler(cfg.Scheduler, pool)
 	if err != nil {
-		logger.Error("定时任务初始化失败", "error", err)
+		log.Printf("定时任务初始化失败 error=%v", err)
 	} else if sched != nil {
 		defer func() {
 			shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
@@ -90,14 +89,14 @@ func main() {
 	}
 
 	router := newRouter(routerDeps{
-		cfg: cfg, templates: templates, logs: logs, logger: logger,
+		cfg: cfg, templates: templates,
 		db: db, redisCache: redisCache, sessions: sessions, adminHandler: adminHandler,
 	})
 	server := &http.Server{Addr: cfg.HTTP.Addr, Handler: router, ReadHeaderTimeout: 5 * time.Second}
 	go func() {
-		logger.Info("HTTP 服务启动", "addr", cfg.HTTP.Addr)
+		log.Printf("HTTP 服务启动 addr=%s", cfg.HTTP.Addr)
 		if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
-			logger.Error("HTTP 服务异常退出", "error", err)
+			log.Printf("HTTP 服务异常退出 error=%v", err)
 			stop()
 		}
 	}()
@@ -105,5 +104,5 @@ func main() {
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	_ = server.Shutdown(shutdownCtx)
-	logger.Info("HTTP 服务已停止")
+	log.Print("HTTP 服务已停止")
 }

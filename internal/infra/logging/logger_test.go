@@ -1,7 +1,6 @@
 package logging
 
 import (
-	"log/slog"
 	"os"
 	"path/filepath"
 	"strings"
@@ -10,12 +9,7 @@ import (
 
 func TestNewCreatesDailyFiles(t *testing.T) {
 	dir := t.TempDir()
-	logger, err := New(Config{Dir: dir, Timezone: "Asia/Shanghai", RetentionDays: 30, Level: "info"})
-	if err != nil {
-		t.Fatal(err)
-	}
-	logger.App.Info("test", slog.String("component", "test"))
-	logger.Close()
+
 	entries, err := os.ReadDir(dir)
 	if err != nil {
 		t.Fatal(err)

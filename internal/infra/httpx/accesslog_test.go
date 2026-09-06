@@ -2,7 +2,6 @@ package httpx
 
 import (
 	"context"
-	"log/slog"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -12,8 +11,8 @@ import (
 )
 
 func TestAccessLogPreservesWebSocketHijacker(t *testing.T) {
-	logger := slog.New(slog.NewTextHandler(httptest.NewRecorder(), nil))
-	handler := RequestID(AccessLog(logger)(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+
+	handler := RequestID(AccessLog()(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		conn, err := websocket.Accept(w, r, &websocket.AcceptOptions{InsecureSkipVerify: true})
 		if err != nil {
 			t.Errorf("accept websocket: %v", err)

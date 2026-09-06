@@ -1,13 +1,12 @@
 package logging
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"log"
-	"log/slog"
 	"os"
 	"path/filepath"
-	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -17,7 +16,6 @@ type Config struct {
 	Dir, Timezone      string
 	RetentionDays      int
 	Console, AddSource bool
-	Level              string
 }
 
 type dailyWriter struct {
@@ -28,6 +26,8 @@ type dailyWriter struct {
 	date        string
 	retention   int
 }
+
+var errDailyWriterClosed = errors.New("daily log writer is closed")
 
 func newDailyWriter(dir, prefix, timezone string, retention int) (*dailyWriter, error) {
 	location, err := time.LoadLocation(timezone)
@@ -43,6 +43,9 @@ func newDailyWriter(dir, prefix, timezone string, retention int) (*dailyWriter, 
 func (w *dailyWriter) Write(p []byte) (int, error) {
 	w.mu.Lock()
 	defer w.mu.Unlock()
+	if w.file == nil {
+		return 0, errDailyWriterClosed
+	}
 	if time.Now().In(w.location).Format("2006-01-02") != w.date {
 		if err := w.rotate(time.Now()); err != nil {
 			return 0, err
@@ -55,15 +58,21 @@ func (w *dailyWriter) rotate(now time.Time) error {
 		return err
 	}
 	date := now.In(w.location).Format("2006-01-02")
-	if w.file != nil {
-		_ = w.file.Close()
+	oldFile := w.file
+	w.file = nil
+	if oldFile != nil {
+		_ = oldFile.Close()
 	}
 	file, err := os.OpenFile(filepath.Join(w.dir, w.prefix+"-"+date+".log"), os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0644)
 	if err != nil {
 		return err
 	}
+	if err := w.clean(); err != nil {
+		_ = file.Close()
+		return err
+	}
 	w.file, w.date = file, date
-	return w.clean()
+	return nil
 }
 func (w *dailyWriter) clean() error {
 	if w.retention <= 0 {
@@ -91,14 +100,17 @@ func (w *dailyWriter) Close() error {
 	if w.file == nil {
 		return nil
 	}
-	return w.file.Close()
+	err := w.file.Close()
+	w.file = nil
+	return err
 }
 
 type Logger struct {
-	App, Access *slog.Logger
-	closers     []io.Closer
-
-	appWriter io.Writer // 标准log添加
+	App, Access *log.Logger
+	appFile     *dailyWriter
+	accessFile  *dailyWriter
+	appWriter   io.Writer
+	flags       int
 }
 
 func New(cfg Config) (*Logger, error) {
@@ -111,33 +123,37 @@ func New(cfg Config) (*Logger, error) {
 		_ = app.Close()
 		return nil, err
 	}
-	level := slog.LevelInfo
-	switch strings.ToLower(cfg.Level) {
-	case "debug":
-		level = slog.LevelDebug
-	case "warn":
-		level = slog.LevelWarn
-	case "error":
-		level = slog.LevelError
-	}
-	opts := &slog.HandlerOptions{Level: level, AddSource: cfg.AddSource}
 	appWriter := io.Writer(app)
 	accessWriter := io.Writer(access)
 	if cfg.Console {
 		appWriter = io.MultiWriter(os.Stdout, app)
 		accessWriter = io.MultiWriter(os.Stdout, access)
 	}
-	return &Logger{App: slog.New(slog.NewTextHandler(appWriter, opts)), Access: slog.New(slog.NewTextHandler(accessWriter, opts)), appWriter: appWriter, closers: []io.Closer{app, access}}, nil
+	flags := log.LstdFlags
+	if cfg.AddSource {
+		flags |= log.Lshortfile
+	}
+	return &Logger{
+		App:        log.New(appWriter, "", flags),
+		Access:     log.New(accessWriter, "", flags),
+		appFile:    app,
+		accessFile: access,
+		appWriter:  appWriter,
+		flags:      flags,
+	}, nil
 }
 func (l *Logger) Close() {
-	for _, closer := range l.closers {
-		_ = closer.Close()
+	if l == nil {
+		return
 	}
+	_ = l.appFile.Close()
+	_ = l.accessFile.Close()
 }
-func (l *Logger) With(component string) *slog.Logger       { return l.App.With("component", component) }
-func (l *Logger) SortFilesForTest(names []string) []string { sort.Strings(names); return names }
+func (l *Logger) With(component string) *log.Logger {
+	return log.New(l.appWriter, "component="+component+" ", l.flags)
+}
 
 func (l *Logger) ConfigureStandardLog() {
 	log.SetOutput(l.appWriter)
-	log.SetFlags(0)
+	log.SetFlags(l.flags)
 }
