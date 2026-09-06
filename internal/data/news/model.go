@@ -1,4 +1,4 @@
-package model
+package newsdata
 
 import "time"
 

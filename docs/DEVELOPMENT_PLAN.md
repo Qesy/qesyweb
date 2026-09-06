@@ -22,7 +22,7 @@
 - [x] 创建约定目录结构。
 - [x] 将 Protobuf 目录命名为 `proto/`，避免 `api` 命名歧义。
 - [x] 将语言包按语言目录和页面文件拆分，并为每种语言提供 `common.json`。
-- [x] 创建 `templates/`、`static/images/`、`static/scripts/`、`static/styles/` 和 `web/` 目录约定。
+- [x] 创建 `web/templates/`、`web/static/images/`、`web/static/scripts/`、`web/static/styles/` 和 `web/` 目录约定。
 - [x] 注册 `/proto/` 和 `/static/` 静态资源路由，并在模板中接入示例资源。
 - [x] 将 `cmd/web/main.go` 的路由注册拆分到 `cmd/web/router.go`。
 - [x] 将定时任务注册和生命周期拆分到 `cmd/web/scheduler.go`。
@@ -34,7 +34,7 @@
 
 - [x] 接入 QesySQL/MySQL，提供连接检查和事务辅助，并已用真实 MySQL 启动迁移。
 - [x] 接入 Redis，提供连接检查和缓存辅助，并已用真实 Redis 启动验证。
-- [x] 增加 `internal/cache/keys.go`，集中管理带业务命名空间和版本的 Redis Key。
+- [x] 增加 `internal/infra/cache/keys.go`，集中管理带业务命名空间和版本的 Redis Key。
 - [x] 配置 MySQL 迁移及初始表结构。
 - [x] 配置 Chi、通用中间件、错误处理、静态资源和模板渲染。
 
@@ -103,35 +103,22 @@
 ## 预期目录结构
 
 ```text
-cmd/web/                  程序入口和依赖组装
-config/                   强类型、环境驱动的配置
-internal/app/             应用容器和生命周期管理
-internal/database/        QesySQL 初始化、迁移和事务辅助
-internal/cache/           Redis 客户端和缓存辅助
-internal/http/            Chi 路由、中间件、模板渲染、HTTP 错误处理
-internal/logging/         slog 日志初始化、按天文件切换和脱敏
-internal/admin/           管理员账号、登录和后台页面
-internal/auth/            Session 与登录态保护中间件
-internal/captcha/         图片验证码
-internal/i18n/             JSON 语言包和语言识别
-internal/mail/             Resend 邮件发送封装
-internal/scheduler/       定时任务注册、调度和生命周期管理
-internal/worker/          后台任务队列、Worker 和任务定义
-internal/websocket/       连接管理、消息分发、房间和心跳
-internal/news/handler/    HTTP 请求处理和模板渲染
-internal/news/frontend/   前台新闻列表和详情处理
-internal/news/service/    业务规则、缓存失效和事务边界
-internal/news/repository/ 基于 QesySQL 的数据持久化
-internal/news/model/      数据库实体、请求 DTO、视图 DTO
-internal/shared/          错误、常量、校验和通用工具
-migrations/               版本化 MySQL 迁移脚本
-proto/                    Protobuf 协议定义和生成代码
-templates/                html/template 布局、局部模板和页面
-static/images/            图片静态资源
-static/scripts/            JavaScript 静态资源
-static/styles/             CSS 静态资源
-web/                      Web 层目录约定说明
-docs/                     开发与使用文档
+cmd/web/                      程序入口和依赖组装
+config/                       强类型、环境驱动的配置
+internal/infra/               数据库、缓存、日志、认证等基础设施
+internal/data/news/           新闻数据模型和基于 QesySQL 的 Repository
+internal/data/adminuser/      管理员数据模型和基于 QesySQL 的 Repository
+internal/modules/news/admin/  后台新闻 HTTP 请求处理和模板渲染
+internal/modules/news/frontend/ 前台新闻列表和详情处理
+internal/modules/news/service/  业务规则、缓存失效和事务边界
+internal/modules/admin/handler/ 管理员登录和后台页面
+migrations/                   版本化 MySQL 迁移脚本
+proto/                        Protobuf 协议定义和生成代码
+web/templates/                html/template 布局、局部模板和页面
+web/static/images/            图片静态资源
+web/static/scripts/           JavaScript 静态资源
+web/static/styles/            CSS 静态资源
+docs/                         开发与使用文档
 ```
 
 ## 分层职责
@@ -239,7 +226,7 @@ LOG_ADD_SOURCE=false
 3. `/admin/login` 展示登录表单和图片验证码；登录成功后通过 HttpOnly Session Cookie 进入后台。
 4. Session 优先保存到 Redis；未启用 Redis 时使用进程内存，仅用于单机演示。
 5. `auth.Manager.Require` 保护后台和新闻管理路由；未登录请求跳转到登录页。
-6. `/admin/email/test` 演示通过 Resend HTTP API 发送邮件，邮件实现放在 `internal/mail`，业务代码不依赖具体邮件厂商。
+6. `/admin/email/test` 演示通过 Resend HTTP API 发送邮件，邮件实现放在 `internal/infra/mail`，业务代码不依赖具体邮件厂商。
 7. Resend 未启用或配置不完整时必须返回明确错误，不能重定向为成功。
 8. 当前示例只演示管理员登录态；角色、权限点和多管理员授权规则作为后续扩展。
 

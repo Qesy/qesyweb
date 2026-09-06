@@ -64,7 +64,7 @@ RESEND_API_KEY=re_xxxxxxxxx
 RESEND_FROM=QesyWeb <noreply@example.com>
 ```
 
-登录后台后，点击“发送 Resend 测试邮件”即可验证邮件配置。邮件通过 Resend API 发送，封装在 `internal/mail` 中；管理员收件邮箱来自数据库中的管理员记录。
+登录后台后，点击“发送 Resend 测试邮件”即可验证邮件配置。邮件通过 Resend API 发送，封装在 `internal/infra/mail` 中；管理员收件邮箱来自数据库中的管理员记录。
 如果没有设置 `RESEND_ENABLED=true`，系统会明确返回“邮件发送未启用”，不会把未发送误报为成功。
 
 ## 多语言示例
@@ -94,23 +94,25 @@ locales/
 
 ## 代码应该放在哪里
 
-- `internal/news/frontend`：前台新闻列表和详情 Handler，只展示已发布内容。
-- `internal/news/handler`：后台新闻管理 Handler，负责 CRUD 和表单。
+- `internal/modules/news/frontend`：前台新闻列表和详情 Handler，只展示已发布内容。
+- `internal/modules/news/admin`：后台新闻管理 Handler，负责 CRUD 和表单。
+- `internal/data/news`：新闻实体、请求结构和新闻 Repository。
+- `internal/data/adminuser`：管理员实体和管理员用户 Repository，供登录和其他业务复用。
 - `handler`：处理 HTTP 参数、校验和模板，不直接访问数据库。
 - `service`：处理业务规则、事务边界和缓存失效。
 - `repository`：处理数据库持久化。普通单表操作使用 QesySQL 链式 API。
 - `model`：定义实体、请求结构和页面数据结构。
-- `internal/cache`：Redis 连接和 JSON 缓存辅助。
-- `internal/logging`：按天日志文件和日志清理。
+- `internal/infra/cache`：Redis 连接和 JSON 缓存辅助。
+- `internal/infra/logging`：按天日志文件和日志清理。
 - `internal/scheduler`：定时任务注册和停止。
 - `internal/worker`：后台任务队列和 Worker。
 - `internal/websocket`：连接、心跳、Protobuf 消息和房间广播。
-- `internal/auth`：Session、登录态和管理员保护中间件。
-- `internal/captcha`：一次性图片验证码。
-- `internal/i18n`：JSON 语言包加载和请求语言识别。
-- `internal/mail`：Resend 邮件发送封装。
-- `templates/`：Go `html/template` 页面模板。
-- `static/images/`、`static/scripts/`、`static/styles/`：图片、脚本和样式等静态资源。
+- `internal/infra/auth`：Session、登录态和管理员保护中间件。
+- `internal/infra/captcha`：一次性图片验证码。
+- `internal/infra/i18n`：JSON 语言包加载和请求语言识别。
+- `internal/infra/mail`：Resend 邮件发送封装。
+- `web/templates/`：Go `html/template` 页面模板。
+- `web/static/images/`、`web/static/scripts/`、`web/static/styles/`：图片、脚本和样式等静态资源。
 - `web/`：Web 层目录约定说明；程序入口仍在 `cmd/web`。
 
 ## QesySQL 示例
@@ -141,7 +143,7 @@ err := db.InTx(ctx, nil, func(tx *qesysql.Tx) error {
 
 ## Redis Key 集中管理与 Redis 示例
 
-Redis Key 统一定义在 `internal/cache/keys.go`，业务代码不直接散落拼接 Key：
+Redis Key 统一定义在 `internal/infra/cache/keys.go`，业务代码不直接散落拼接 Key：
 
 ```go
 key := cache.NewsDetail(newsID)
@@ -202,16 +204,16 @@ WebSocket 服务端地址为 `/ws/game`，使用二进制帧传输 Protobuf，�
 
 ## 静态资源
 
-静态资源统一放在根目录 `static/`，程序通过 `/static/` 提供访问：
+静态资源统一放在 `web/static/`，程序通过 `/static/` 提供访问：
 
 ```text
-static/
+web/static/
 ├── images/   图片
 ├── scripts/  JavaScript
 └── styles/   CSS
 ```
 
-例如 `static/styles/app.css` 的浏览器地址是 `/static/styles/app.css`。模板文件仍放在根目录 `templates/`。
+例如 `web/static/styles/app.css` 的浏览器地址是 `/static/styles/app.css`。模板文件放在 `web/templates/`。
 
 ## 按业务组织代码
 

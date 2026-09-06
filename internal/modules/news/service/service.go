@@ -5,20 +5,19 @@ import (
 	"errors"
 	"time"
 
+	newsdata "github.com/Qesy/QesyWeb/internal/data/news"
 	"github.com/Qesy/QesyWeb/internal/infra/cache"
-	"github.com/Qesy/QesyWeb/internal/modules/news/model"
-	"github.com/Qesy/QesyWeb/internal/modules/news/repository"
 )
 
 type Service struct {
-	repo  *repository.Repository
+	repo  *newsdata.Repository
 	cache *cache.Cache
 }
 
-func New(repo *repository.Repository, cache *cache.Cache) *Service {
+func New(repo *newsdata.Repository, cache *cache.Cache) *Service {
 	return &Service{repo: repo, cache: cache}
 }
-func (s *Service) List(ctx context.Context, page, pageSize int, status string) (model.Page, error) {
+func (s *Service) List(ctx context.Context, page, pageSize int, status string) (newsdata.Page, error) {
 	if page < 1 {
 		page = 1
 	}
@@ -26,7 +25,7 @@ func (s *Service) List(ctx context.Context, page, pageSize int, status string) (
 		pageSize = 20
 	}
 	key := cache.NewsList(page, pageSize, status)
-	var result model.Page
+	var result newsdata.Page
 	if s.cache != nil && s.cache.GetJSON(ctx, key, &result) == nil {
 		return result, nil
 	}
@@ -38,15 +37,15 @@ func (s *Service) List(ctx context.Context, page, pageSize int, status string) (
 	if err != nil {
 		return result, err
 	}
-	result = model.Page{Items: items, Page: page, PageSize: pageSize, Total: total}
+	result = newsdata.Page{Items: items, Page: page, PageSize: pageSize, Total: total}
 	if s.cache != nil {
 		_ = s.cache.SetJSON(ctx, key, result, 30*time.Second)
 	}
 	return result, nil
 }
-func (s *Service) Find(ctx context.Context, id int64) (model.News, error) {
+func (s *Service) Find(ctx context.Context, id int64) (newsdata.News, error) {
 	key := cache.NewsDetail(id)
-	var item model.News
+	var item newsdata.News
 	if s.cache != nil && s.cache.GetJSON(ctx, key, &item) == nil {
 		return item, nil
 	}
@@ -59,9 +58,9 @@ func (s *Service) Find(ctx context.Context, id int64) (model.News, error) {
 	}
 	return item, nil
 }
-func (s *Service) FindPublished(ctx context.Context, id int64) (model.News, error) {
+func (s *Service) FindPublished(ctx context.Context, id int64) (newsdata.News, error) {
 	key := cache.NewsPublicDetail(id)
-	var item model.News
+	var item newsdata.News
 	if s.cache != nil && s.cache.GetJSON(ctx, key, &item) == nil {
 		return item, nil
 	}
@@ -74,7 +73,7 @@ func (s *Service) FindPublished(ctx context.Context, id int64) (model.News, erro
 	}
 	return item, nil
 }
-func (s *Service) Create(ctx context.Context, input model.Form) (int64, error) {
+func (s *Service) Create(ctx context.Context, input newsdata.Form) (int64, error) {
 	if err := validate(input); err != nil {
 		return 0, err
 	}
@@ -82,7 +81,7 @@ func (s *Service) Create(ctx context.Context, input model.Form) (int64, error) {
 	s.invalidate(ctx, id)
 	return id, err
 }
-func (s *Service) CreateWithAudit(ctx context.Context, input model.Form) error {
+func (s *Service) CreateWithAudit(ctx context.Context, input newsdata.Form) error {
 	if err := validate(input); err != nil {
 		return err
 	}
@@ -90,7 +89,7 @@ func (s *Service) CreateWithAudit(ctx context.Context, input model.Form) error {
 	s.invalidate(ctx, 0)
 	return err
 }
-func (s *Service) Update(ctx context.Context, id int64, input model.Form) error {
+func (s *Service) Update(ctx context.Context, id int64, input newsdata.Form) error {
 	if err := validate(input); err != nil {
 		return err
 	}
@@ -113,7 +112,7 @@ func (s *Service) invalidate(ctx context.Context, id int64) {
 	}
 	_ = s.cache.DeletePrefix(ctx, cache.NewsListPrefix)
 }
-func validate(input model.Form) error {
+func validate(input newsdata.Form) error {
 	if input.Title == "" {
 		return errors.New("标题不能为空")
 	}

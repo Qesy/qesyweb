@@ -1,10 +1,11 @@
-package admin
+package handler
 
 import (
 	"html/template"
 	"net/http"
 	"strings"
 
+	"github.com/Qesy/QesyWeb/internal/data/adminuser"
 	"github.com/Qesy/QesyWeb/internal/infra/auth"
 	"github.com/Qesy/QesyWeb/internal/infra/captcha"
 	"github.com/Qesy/QesyWeb/internal/infra/i18n"
@@ -13,7 +14,7 @@ import (
 )
 
 type Handler struct {
-	repo      *Repository
+	repo      *adminuser.Repository
 	sessions  *auth.Manager
 	captcha   *captcha.Store
 	languages *i18n.Bundle
@@ -21,7 +22,7 @@ type Handler struct {
 	templates *template.Template
 }
 
-func NewHandler(repo *Repository, sessions *auth.Manager, captchaStore *captcha.Store, languages *i18n.Bundle, mailer *mail.Mailer, templates *template.Template) *Handler {
+func NewHandler(repo *adminuser.Repository, sessions *auth.Manager, captchaStore *captcha.Store, languages *i18n.Bundle, mailer *mail.Mailer, templates *template.Template) *Handler {
 	return &Handler{repo: repo, sessions: sessions, captcha: captchaStore, languages: languages, mailer: mailer, templates: templates}
 }
 func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {

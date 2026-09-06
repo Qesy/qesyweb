@@ -5,14 +5,14 @@ import (
 	"net/http"
 
 	"github.com/Qesy/QesyWeb/config"
+	newsdata "github.com/Qesy/QesyWeb/internal/data/news"
 	"github.com/Qesy/QesyWeb/internal/infra/auth"
 	"github.com/Qesy/QesyWeb/internal/infra/cache"
 	"github.com/Qesy/QesyWeb/internal/infra/httpx"
-	"github.com/Qesy/QesyWeb/internal/modules/admin"
+	adminHandler "github.com/Qesy/QesyWeb/internal/modules/admin/handler"
 	"github.com/Qesy/QesyWeb/internal/modules/news"
+	newsHandler "github.com/Qesy/QesyWeb/internal/modules/news/admin"
 	"github.com/Qesy/QesyWeb/internal/modules/news/frontend"
-	newsHandler "github.com/Qesy/QesyWeb/internal/modules/news/handler"
-	"github.com/Qesy/QesyWeb/internal/modules/news/repository"
 	"github.com/Qesy/QesyWeb/internal/modules/news/service"
 	gamews "github.com/Qesy/QesyWeb/internal/websocket"
 	"github.com/Qesy/qesysql"
@@ -26,7 +26,7 @@ type routerDeps struct {
 	db           *qesysql.DB
 	redisCache   *cache.Cache
 	sessions     *auth.Manager
-	adminHandler *admin.Handler
+	adminHandler *adminHandler.Handler
 }
 
 func newRouter(deps routerDeps) chi.Router {
@@ -54,7 +54,7 @@ func newRouter(deps routerDeps) chi.Router {
 		adminRouter.With(deps.sessions.Require).Post("/email/test", deps.adminHandler.SendTestMail)
 	})
 
-	newsService := service.New(repository.New(deps.db), deps.redisCache)
+	newsService := service.New(newsdata.New(deps.db), deps.redisCache)
 	news.RegisterPublicRoutes(router, frontend.New(newsService, deps.templates))
 	news.RegisterAdminRoutes(router.With(deps.sessions.Require), newsHandler.New(newsService, deps.templates))
 	router.Handle("/ws/game", gamews.New())

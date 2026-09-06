@@ -9,6 +9,12 @@ import (
 
 func TestNewCreatesDailyFiles(t *testing.T) {
 	dir := t.TempDir()
+	logger, err := New(Config{Dir: dir, Timezone: "Asia/Shanghai", RetentionDays: 30})
+	if err != nil {
+		t.Fatal(err)
+	}
+	logger.App.Print("test")
+	logger.Close()
 
 	entries, err := os.ReadDir(dir)
 	if err != nil {

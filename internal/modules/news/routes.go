@@ -1,8 +1,8 @@
 package news
 
 import (
+	newsAdmin "github.com/Qesy/QesyWeb/internal/modules/news/admin"
 	"github.com/Qesy/QesyWeb/internal/modules/news/frontend"
-	"github.com/Qesy/QesyWeb/internal/modules/news/handler"
 	"github.com/go-chi/chi/v5"
 )
 
@@ -11,7 +11,7 @@ func RegisterPublicRoutes(router chi.Router, h *frontend.Handler) {
 	router.Get("/news/{id}", h.Detail)
 }
 
-func RegisterAdminRoutes(router chi.Router, h *handler.Handler) {
+func RegisterAdminRoutes(router chi.Router, h *newsAdmin.Handler) {
 	router.Get("/admin/news", h.List)
 	router.Get("/admin/news/new", h.New)
 	router.Post("/admin/news", h.Create)

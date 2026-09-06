@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/Qesy/QesyWeb/config"
+	"github.com/Qesy/QesyWeb/internal/data/adminuser"
 	"github.com/Qesy/QesyWeb/internal/infra/auth"
 	"github.com/Qesy/QesyWeb/internal/infra/cache"
 	"github.com/Qesy/QesyWeb/internal/infra/captcha"
@@ -19,7 +20,7 @@ import (
 	"github.com/Qesy/QesyWeb/internal/infra/i18n"
 	"github.com/Qesy/QesyWeb/internal/infra/logging"
 	"github.com/Qesy/QesyWeb/internal/infra/mail"
-	"github.com/Qesy/QesyWeb/internal/modules/admin"
+	adminHandler "github.com/Qesy/QesyWeb/internal/modules/admin/handler"
 	"github.com/Qesy/QesyWeb/internal/worker"
 )
 
@@ -68,7 +69,7 @@ func main() {
 	}
 
 	sessions := auth.NewManager(redisCache, cfg.Session.CookieName, time.Duration(cfg.Session.TTLMinutes)*time.Minute, cfg.Session.Secure)
-	adminHandler := admin.NewHandler(admin.NewRepository(db), sessions, captcha.NewStore(), languages, mail.New(cfg.Resend), templates)
+	adminHandler := adminHandler.NewHandler(adminuser.NewRepository(db), sessions, captcha.NewStore(), languages, mail.New(cfg.Resend), templates)
 
 	pool := worker.New(cfg.Worker.Count, cfg.Worker.QueueSize)
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
