@@ -3,6 +3,8 @@ package worker
 import (
 	"context"
 	"errors"
+	"log"
+	"runtime/debug"
 	"sync"
 )
 
@@ -48,10 +50,24 @@ func (p *Pool) loop(ctx context.Context) {
 			if !ok {
 				return
 			}
-			_ = job.Run(ctx)
+
+			p.runJob(ctx, job)
 		}
 	}
 }
+
+func (p *Pool) runJob(ctx context.Context, job Job) {
+	defer func() {
+		if recovered := recover(); recovered != nil {
+			log.Printf("worker panic: %v\n%s", recovered, debug.Stack())
+		}
+	}()
+
+	if err := job.Run(ctx); err != nil {
+		log.Printf("worker job failed : %s", err)
+	}
+}
+
 func (p *Pool) Submit(job Job) error {
 	p.mu.RLock()
 	defer p.mu.RUnlock()

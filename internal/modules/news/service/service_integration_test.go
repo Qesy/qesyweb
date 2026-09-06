@@ -7,10 +7,10 @@ import (
 	"time"
 
 	"github.com/Qesy/QesyWeb/config"
-	"github.com/Qesy/QesyWeb/internal/cache"
-	"github.com/Qesy/QesyWeb/internal/database"
-	"github.com/Qesy/QesyWeb/internal/news/model"
-	"github.com/Qesy/QesyWeb/internal/news/repository"
+	"github.com/Qesy/QesyWeb/internal/infra/cache"
+	"github.com/Qesy/QesyWeb/internal/infra/database"
+	"github.com/Qesy/QesyWeb/internal/modules/news/model"
+	"github.com/Qesy/QesyWeb/internal/modules/news/repository"
 	"github.com/Qesy/qesysql"
 )
 

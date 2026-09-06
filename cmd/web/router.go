@@ -6,16 +6,16 @@ import (
 	"net/http"
 
 	"github.com/Qesy/QesyWeb/config"
-	"github.com/Qesy/QesyWeb/internal/admin"
-	"github.com/Qesy/QesyWeb/internal/auth"
-	"github.com/Qesy/QesyWeb/internal/cache"
-	"github.com/Qesy/QesyWeb/internal/httpx"
-	"github.com/Qesy/QesyWeb/internal/logging"
-	"github.com/Qesy/QesyWeb/internal/news"
-	"github.com/Qesy/QesyWeb/internal/news/frontend"
-	newsHandler "github.com/Qesy/QesyWeb/internal/news/handler"
-	"github.com/Qesy/QesyWeb/internal/news/repository"
-	"github.com/Qesy/QesyWeb/internal/news/service"
+	"github.com/Qesy/QesyWeb/internal/infra/auth"
+	"github.com/Qesy/QesyWeb/internal/infra/cache"
+	"github.com/Qesy/QesyWeb/internal/infra/httpx"
+	"github.com/Qesy/QesyWeb/internal/infra/logging"
+	"github.com/Qesy/QesyWeb/internal/modules/admin"
+	"github.com/Qesy/QesyWeb/internal/modules/news"
+	"github.com/Qesy/QesyWeb/internal/modules/news/frontend"
+	newsHandler "github.com/Qesy/QesyWeb/internal/modules/news/handler"
+	"github.com/Qesy/QesyWeb/internal/modules/news/repository"
+	"github.com/Qesy/QesyWeb/internal/modules/news/service"
 	gamews "github.com/Qesy/QesyWeb/internal/websocket"
 	"github.com/Qesy/qesysql"
 	"github.com/go-chi/chi/v5"
@@ -47,7 +47,7 @@ func newRouter(deps routerDeps) chi.Router {
 		_ = deps.templates.ExecuteTemplate(w, "game.html", nil)
 	})
 	router.Handle("/proto/*", http.StripPrefix("/proto/", http.FileServer(http.Dir("proto"))))
-	router.Handle("/static/*", http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
+	router.Handle("/static/*", http.StripPrefix("/static/", http.FileServer(http.Dir("web/static"))))
 	router.Route("/admin", func(adminRouter chi.Router) {
 		adminRouter.Get("/login", deps.adminHandler.Login)
 		adminRouter.Post("/login", deps.adminHandler.LoginPost)

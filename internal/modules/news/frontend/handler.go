@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/Qesy/QesyWeb/internal/news/service"
+	"github.com/Qesy/QesyWeb/internal/modules/news/service"
 )
 
 type Handler struct {

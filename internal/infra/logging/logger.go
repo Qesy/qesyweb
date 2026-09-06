@@ -3,6 +3,7 @@ package logging
 import (
 	"fmt"
 	"io"
+	"log"
 	"log/slog"
 	"os"
 	"path/filepath"
@@ -96,6 +97,8 @@ func (w *dailyWriter) Close() error {
 type Logger struct {
 	App, Access *slog.Logger
 	closers     []io.Closer
+
+	appWriter io.Writer // 标准log添加
 }
 
 func New(cfg Config) (*Logger, error) {
@@ -124,7 +127,7 @@ func New(cfg Config) (*Logger, error) {
 		appWriter = io.MultiWriter(os.Stdout, app)
 		accessWriter = io.MultiWriter(os.Stdout, access)
 	}
-	return &Logger{App: slog.New(slog.NewTextHandler(appWriter, opts)), Access: slog.New(slog.NewTextHandler(accessWriter, opts)), closers: []io.Closer{app, access}}, nil
+	return &Logger{App: slog.New(slog.NewTextHandler(appWriter, opts)), Access: slog.New(slog.NewTextHandler(accessWriter, opts)), appWriter: appWriter, closers: []io.Closer{app, access}}, nil
 }
 func (l *Logger) Close() {
 	for _, closer := range l.closers {
@@ -133,3 +136,8 @@ func (l *Logger) Close() {
 }
 func (l *Logger) With(component string) *slog.Logger       { return l.App.With("component", component) }
 func (l *Logger) SortFilesForTest(names []string) []string { sort.Strings(names); return names }
+
+func (l *Logger) ConfigureStandardLog() {
+	log.SetOutput(l.appWriter)
+	log.SetFlags(0)
+}

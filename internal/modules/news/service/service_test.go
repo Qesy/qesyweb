@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/Qesy/QesyWeb/internal/news/model"
+	"github.com/Qesy/QesyWeb/internal/modules/news/model"
 )
 
 func TestCreateValidation(t *testing.T) {

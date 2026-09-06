@@ -9,7 +9,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/Qesy/QesyWeb/internal/cache"
+	"github.com/Qesy/QesyWeb/internal/infra/cache"
 )
 
 var ErrSessionNotFound = errors.New("session not found")

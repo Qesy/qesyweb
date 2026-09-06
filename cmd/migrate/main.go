@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/Qesy/QesyWeb/config"
-	"github.com/Qesy/QesyWeb/internal/database"
+	"github.com/Qesy/QesyWeb/internal/infra/database"
 )
 
 func main() {

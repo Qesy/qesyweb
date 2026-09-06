@@ -1,8 +1,8 @@
 package news
 
 import (
-	"github.com/Qesy/QesyWeb/internal/news/frontend"
-	"github.com/Qesy/QesyWeb/internal/news/handler"
+	"github.com/Qesy/QesyWeb/internal/modules/news/frontend"
+	"github.com/Qesy/QesyWeb/internal/modules/news/handler"
 	"github.com/go-chi/chi/v5"
 )
 

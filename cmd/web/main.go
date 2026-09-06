@@ -11,14 +11,14 @@ import (
 	"time"
 
 	"github.com/Qesy/QesyWeb/config"
-	"github.com/Qesy/QesyWeb/internal/admin"
-	"github.com/Qesy/QesyWeb/internal/auth"
-	"github.com/Qesy/QesyWeb/internal/cache"
-	"github.com/Qesy/QesyWeb/internal/captcha"
-	"github.com/Qesy/QesyWeb/internal/database"
-	"github.com/Qesy/QesyWeb/internal/i18n"
-	"github.com/Qesy/QesyWeb/internal/logging"
-	"github.com/Qesy/QesyWeb/internal/mail"
+	"github.com/Qesy/QesyWeb/internal/infra/auth"
+	"github.com/Qesy/QesyWeb/internal/infra/cache"
+	"github.com/Qesy/QesyWeb/internal/infra/captcha"
+	"github.com/Qesy/QesyWeb/internal/infra/database"
+	"github.com/Qesy/QesyWeb/internal/infra/i18n"
+	"github.com/Qesy/QesyWeb/internal/infra/logging"
+	"github.com/Qesy/QesyWeb/internal/infra/mail"
+	"github.com/Qesy/QesyWeb/internal/modules/admin"
 	"github.com/Qesy/QesyWeb/internal/worker"
 )
 
@@ -28,16 +28,22 @@ func main() {
 		panic(err)
 	}
 	logs, err := logging.New(logging.Config{
-		Dir: cfg.Log.Dir, Timezone: cfg.Log.Timezone, RetentionDays: cfg.Log.RetentionDays,
-		Console: cfg.Log.Console, AddSource: cfg.Log.AddSource, Level: cfg.Log.Level,
+		Dir:           cfg.Log.Dir,
+		Timezone:      cfg.Log.Timezone,
+		RetentionDays: cfg.Log.RetentionDays,
+		Console:       cfg.Log.Console,
+		AddSource:     cfg.Log.AddSource,
+		Level:         cfg.Log.Level,
 	})
 	if err != nil {
 		panic(err)
 	}
 	defer logs.Close()
+	logs.ConfigureStandardLog()
 	logger := logs.With("web")
-	templates := template.Must(template.ParseGlob("templates/*.html"))
-	languages, err := i18n.LoadDir("locales", "en-US")
+
+	templates := template.Must(template.ParseGlob("web/templates/*.html"))
+	languages, err := i18n.LoadDir("web/locales", "en-US")
 	if err != nil {
 		logger.Error("语言包加载失败", "error", err)
 		return
@@ -63,10 +69,8 @@ func main() {
 	}
 
 	sessions := auth.NewManager(redisCache, cfg.Session.CookieName, time.Duration(cfg.Session.TTLMinutes)*time.Minute, cfg.Session.Secure)
-	adminHandler := admin.NewHandler(nil, sessions, captcha.NewStore(), languages, mail.New(cfg.Resend), templates)
-	if db != nil {
-		adminHandler = admin.NewHandler(admin.NewRepository(db), sessions, captcha.NewStore(), languages, mail.New(cfg.Resend), templates)
-	}
+	adminHandler := admin.NewHandler(admin.NewRepository(db), sessions, captcha.NewStore(), languages, mail.New(cfg.Resend), templates)
+
 	pool := worker.New(cfg.Worker.Count, cfg.Worker.QueueSize)
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()

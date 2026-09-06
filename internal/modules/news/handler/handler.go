@@ -6,8 +6,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/Qesy/QesyWeb/internal/news/model"
-	"github.com/Qesy/QesyWeb/internal/news/service"
+	"github.com/Qesy/QesyWeb/internal/modules/news/model"
+	"github.com/Qesy/QesyWeb/internal/modules/news/service"
 )
 
 type Handler struct {
@@ -48,7 +48,7 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 		_ = h.templates.ExecuteTemplate(w, "news_form.html", input)
 		return
 	}
-		http.Redirect(w, r, "/admin/news", http.StatusSeeOther)
+	http.Redirect(w, r, "/admin/news", http.StatusSeeOther)
 }
 func (h *Handler) New(w http.ResponseWriter, r *http.Request) {
 	_ = h.templates.ExecuteTemplate(w, "news_form.html", model.Form{Status: "draft", Action: "/admin/news"})

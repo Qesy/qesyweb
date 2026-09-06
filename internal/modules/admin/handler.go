@@ -5,10 +5,10 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/Qesy/QesyWeb/internal/auth"
-	"github.com/Qesy/QesyWeb/internal/captcha"
-	"github.com/Qesy/QesyWeb/internal/i18n"
-	"github.com/Qesy/QesyWeb/internal/mail"
+	"github.com/Qesy/QesyWeb/internal/infra/auth"
+	"github.com/Qesy/QesyWeb/internal/infra/captcha"
+	"github.com/Qesy/QesyWeb/internal/infra/i18n"
+	"github.com/Qesy/QesyWeb/internal/infra/mail"
 	"golang.org/x/crypto/bcrypt"
 )
 
