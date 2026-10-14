@@ -1,4 +1,4 @@
-package newsdata
+package model
 
 import "time"
 
@@ -13,17 +13,17 @@ type News struct {
 	CreatedAt   time.Time  `db:"created_at"`
 	UpdatedAt   time.Time  `db:"updated_at"`
 }
-type AuditLog struct {
+type NewsAuditLog struct {
 	ID        int64     `db:"id"`
 	NewsID    int64     `db:"news_id"`
 	Action    string    `db:"action"`
 	CreatedAt time.Time `db:"created_at"`
 }
-type Page struct {
+type NewsPage struct {
 	Items                 []News
 	Page, PageSize, Total int
 }
-type Form struct {
+type NewsForm struct {
 	Title, Slug, Summary, Content, Status string
 	Action, Error                         string
 }

@@ -7,9 +7,10 @@ import (
 	"time"
 
 	"github.com/Qesy/QesyWeb/config"
-	newsdata "github.com/Qesy/QesyWeb/internal/data/news"
 	"github.com/Qesy/QesyWeb/internal/infra/cache"
 	"github.com/Qesy/QesyWeb/internal/infra/database"
+	"github.com/Qesy/QesyWeb/internal/model"
+	"github.com/Qesy/QesyWeb/internal/repository"
 	"github.com/Qesy/qesysql"
 )
 
@@ -33,9 +34,9 @@ func TestNewsServiceIntegrationWithRedis(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer redisCache.Close()
-	svc := New(newsdata.New(db), redisCache)
+	svc := NewNewsService(repository.NewNewsRepository(db), redisCache)
 	status := fmt.Sprintf("integration-%d", time.Now().UnixNano())
-	input := newsdata.Form{Title: "缓存集成测试", Slug: status, Content: "cache", Status: "draft"}
+	input := model.NewsForm{Title: "缓存集成测试", Slug: status, Content: "cache", Status: "draft"}
 	id, err := svc.Create(ctx, input)
 	if err != nil {
 		t.Fatal(err)
@@ -63,7 +64,7 @@ func TestNewsServiceIntegrationWithRedis(t *testing.T) {
 	if page.Total < 1 {
 		t.Fatalf("page total = %d", page.Total)
 	}
-	if err := svc.Update(ctx, id, newsdata.Form{Title: "缓存更新", Slug: status, Content: "changed", Status: "draft"}); err != nil {
+	if err := svc.Update(ctx, id, model.NewsForm{Title: "缓存更新", Slug: status, Content: "changed", Status: "draft"}); err != nil {
 		t.Fatal(err)
 	}
 	updated, err := svc.Find(ctx, id)

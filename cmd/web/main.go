@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"errors"
-	"html/template"
 	"log"
 	"net/http"
 	"os"
@@ -12,7 +11,7 @@ import (
 	"time"
 
 	"github.com/Qesy/QesyWeb/config"
-	"github.com/Qesy/QesyWeb/internal/data/adminuser"
+	"github.com/Qesy/QesyWeb/internal/handler"
 	"github.com/Qesy/QesyWeb/internal/infra/auth"
 	"github.com/Qesy/QesyWeb/internal/infra/cache"
 	"github.com/Qesy/QesyWeb/internal/infra/captcha"
@@ -20,7 +19,8 @@ import (
 	"github.com/Qesy/QesyWeb/internal/infra/i18n"
 	"github.com/Qesy/QesyWeb/internal/infra/logging"
 	"github.com/Qesy/QesyWeb/internal/infra/mail"
-	adminHandler "github.com/Qesy/QesyWeb/internal/modules/admin/handler"
+	"github.com/Qesy/QesyWeb/internal/infra/view"
+	"github.com/Qesy/QesyWeb/internal/repository"
 	"github.com/Qesy/QesyWeb/internal/worker"
 )
 
@@ -42,7 +42,11 @@ func main() {
 	defer logs.Close()
 	logs.ConfigureStandardLog()
 
-	templates := template.Must(template.ParseGlob("web/templates/*.html"))
+	templates, err := view.New("web/templates", cfg.App.Env)
+	if err != nil {
+		log.Printf("模板初始化失败 error=%v", err)
+		return
+	}
 	languages, err := i18n.LoadDir("web/locales", "en-US")
 	if err != nil {
 		log.Printf("语言包加载失败 error=%v", err)
@@ -69,7 +73,7 @@ func main() {
 	}
 
 	sessions := auth.NewManager(redisCache, cfg.Session.CookieName, time.Duration(cfg.Session.TTLMinutes)*time.Minute, cfg.Session.Secure)
-	adminHandler := adminHandler.NewHandler(adminuser.NewRepository(db), sessions, captcha.NewStore(), languages, mail.New(cfg.Resend), templates)
+	adminHandler := handler.NewAdminHandler(repository.NewAdminUserRepository(db), sessions, captcha.NewStore(), languages, mail.New(cfg.Resend), templates)
 
 	pool := worker.New(cfg.Worker.Count, cfg.Worker.QueueSize)
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)

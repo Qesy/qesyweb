@@ -1,4 +1,4 @@
-package adminuser
+package model
 
 type AdminUser struct {
 	ID           int64  `db:"id"`

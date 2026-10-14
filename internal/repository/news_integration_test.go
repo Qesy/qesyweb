@@ -1,4 +1,4 @@
-package newsdata
+package repository
 
 import (
 	"context"
@@ -8,6 +8,7 @@ import (
 
 	"github.com/Qesy/QesyWeb/config"
 	"github.com/Qesy/QesyWeb/internal/infra/database"
+	"github.com/Qesy/QesyWeb/internal/model"
 	"github.com/Qesy/qesysql"
 )
 
@@ -26,9 +27,9 @@ func TestNewsRepositoryIntegration(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer db.Close()
-	repo := New(db)
+	repo := NewNewsRepository(db)
 	slug := fmt.Sprintf("integration-%d", time.Now().UnixNano())
-	input := Form{Title: "集成测试新闻", Slug: slug, Summary: "summary", Content: "content", Status: "draft"}
+	input := model.NewsForm{Title: "集成测试新闻", Slug: slug, Summary: "summary", Content: "content", Status: "draft"}
 	id, err := repo.Create(ctx, input)
 	if err != nil {
 		t.Fatal(err)
@@ -65,7 +66,7 @@ func TestNewsRepositoryIntegration(t *testing.T) {
 	if err := repo.Delete(ctx, id); err != nil {
 		t.Fatal(err)
 	}
-	if err := repo.CreateWithAudit(ctx, Form{Title: "事务测试", Slug: slug + "-tx", Content: "tx", Status: "draft"}); err != nil {
+	if err := repo.CreateWithAudit(ctx, model.NewsForm{Title: "事务测试", Slug: slug + "-tx", Content: "tx", Status: "draft"}); err != nil {
 		t.Fatal(err)
 	}
 }

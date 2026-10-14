@@ -1,19 +1,16 @@
 package main
 
 import (
-	"html/template"
 	"net/http"
 
 	"github.com/Qesy/QesyWeb/config"
-	newsdata "github.com/Qesy/QesyWeb/internal/data/news"
+	"github.com/Qesy/QesyWeb/internal/handler"
 	"github.com/Qesy/QesyWeb/internal/infra/auth"
 	"github.com/Qesy/QesyWeb/internal/infra/cache"
 	"github.com/Qesy/QesyWeb/internal/infra/httpx"
-	adminHandler "github.com/Qesy/QesyWeb/internal/modules/admin/handler"
-	"github.com/Qesy/QesyWeb/internal/modules/news"
-	newsHandler "github.com/Qesy/QesyWeb/internal/modules/news/admin"
-	"github.com/Qesy/QesyWeb/internal/modules/news/frontend"
-	"github.com/Qesy/QesyWeb/internal/modules/news/service"
+	"github.com/Qesy/QesyWeb/internal/infra/view"
+	"github.com/Qesy/QesyWeb/internal/repository"
+	"github.com/Qesy/QesyWeb/internal/service"
 	gamews "github.com/Qesy/QesyWeb/internal/websocket"
 	"github.com/Qesy/qesysql"
 	"github.com/go-chi/chi/v5"
@@ -21,12 +18,12 @@ import (
 
 type routerDeps struct {
 	cfg       config.Config
-	templates *template.Template
+	templates *view.Renderer
 
 	db           *qesysql.DB
 	redisCache   *cache.Cache
 	sessions     *auth.Manager
-	adminHandler *adminHandler.Handler
+	adminHandler *handler.AdminHandler
 }
 
 func newRouter(deps routerDeps) chi.Router {
@@ -38,10 +35,10 @@ func newRouter(deps routerDeps) chi.Router {
 		_, _ = w.Write([]byte(`{"status":"ok"}`))
 	})
 	router.Get("/", func(w http.ResponseWriter, r *http.Request) {
-		_ = deps.templates.ExecuteTemplate(w, "home.html", map[string]any{"AppName": deps.cfg.App.Name, "Env": deps.cfg.App.Env})
+		_ = deps.templates.Render(w, "pages/home.html", map[string]any{"AppName": deps.cfg.App.Name, "Env": deps.cfg.App.Env})
 	})
 	router.Get("/game", func(w http.ResponseWriter, r *http.Request) {
-		_ = deps.templates.ExecuteTemplate(w, "game.html", nil)
+		_ = deps.templates.Render(w, "pages/game.html", nil)
 	})
 	router.Handle("/proto/*", http.StripPrefix("/proto/", http.FileServer(http.Dir("proto"))))
 	router.Handle("/static/*", http.StripPrefix("/static/", http.FileServer(http.Dir("web/static"))))
@@ -54,9 +51,19 @@ func newRouter(deps routerDeps) chi.Router {
 		adminRouter.With(deps.sessions.Require).Post("/email/test", deps.adminHandler.SendTestMail)
 	})
 
-	newsService := service.New(newsdata.New(deps.db), deps.redisCache)
-	news.RegisterPublicRoutes(router, frontend.New(newsService, deps.templates))
-	news.RegisterAdminRoutes(router.With(deps.sessions.Require), newsHandler.New(newsService, deps.templates))
+	newsService := service.NewNewsService(repository.NewNewsRepository(deps.db), deps.redisCache)
+	newsFrontend := handler.NewNewsFrontendHandler(newsService, deps.templates)
+	newsAdmin := handler.NewNewsAdminHandler(newsService, deps.templates)
+	router.Get("/news", newsFrontend.List)
+	router.Get("/news/{id}", newsFrontend.Detail)
+	adminNewsRouter := router.With(deps.sessions.Require)
+	adminNewsRouter.Get("/admin/news", newsAdmin.List)
+	adminNewsRouter.Get("/admin/news/new", newsAdmin.New)
+	adminNewsRouter.Post("/admin/news", newsAdmin.Create)
+	adminNewsRouter.Get("/admin/news/{id}", newsAdmin.Detail)
+	adminNewsRouter.Get("/admin/news/{id}/edit", newsAdmin.Edit)
+	adminNewsRouter.Post("/admin/news/{id}", newsAdmin.Update)
+	adminNewsRouter.Post("/admin/news/{id}/delete", newsAdmin.Delete)
 	router.Handle("/ws/game", gamews.New())
 	return router
 }

@@ -2,6 +2,8 @@
 
 这是一个面向业务快速开发的 Go Web 框架示例项目。项目使用一个简单新闻系统展示框架的常用能力：QesySQL 单表 CRUD、MySQL、Redis、HTML 模板、日志、定时任务、Worker，以及 Protobuf WebSocket。
 
+版本改动见[更新日志](CHANGELOG.md)。
+
 ## 环境要求
 
 - Go 1.26 或更高版本
@@ -90,18 +92,17 @@ locales/
 /admin/login?lang=zh-CN
 ```
 
-模板通过 `{{call .T "admin.login.title"}}` 读取语言包，业务代码不直接写死页面文案。
+模板通过 `{{call .T "admin.login.title"}}` 读取语言包，业务代码不直接写死页面文案。启动时由 `internal/infra/view` 按范围解析模板；生产环境启动时缓存模板，development 环境按请求重新解析。支持 `capitalize`、`upper`、`lower`、`add`、`sub`、`mul`、`div`、`floor`、`round` 等模板函数。页面通过 `Renderer.Render` 指定范围和模板名，例如 `pages/home.html` 或 `admin/admin_login.html`。
 
 ## 代码应该放在哪里
 
-- `internal/modules/news/frontend`：前台新闻列表和详情 Handler，只展示已发布内容。
-- `internal/modules/news/admin`：后台新闻管理 Handler，负责 CRUD 和表单。
-- `internal/data/news`：新闻实体、请求结构和新闻 Repository。
-- `internal/data/adminuser`：管理员实体和管理员用户 Repository，供登录和其他业务复用。
-- `handler`：处理 HTTP 参数、校验和模板，不直接访问数据库。
-- `service`：处理业务规则、事务边界和缓存失效。
-- `repository`：处理数据库持久化。普通单表操作使用 QesySQL 链式 API。
-- `model`：定义实体、请求结构和页面数据结构。
+项目按技术层次组织代码，业务能力跨层协作：
+
+- `internal/handler`：HTTP 参数解析、页面渲染和响应，不直接访问数据库。
+- `internal/service`：业务规则、事务边界和缓存失效。
+- `internal/repository`：数据库持久化。普通单表操作使用 QesySQL 链式 API。
+- `internal/model`：实体、请求结构和页面数据结构，由各层共同使用。
+- `internal/infra`：数据库、缓存、日志、认证、国际化、邮件、验证码和 HTTP 通用组件。
 - `internal/infra/cache`：Redis 连接和 JSON 缓存辅助。
 - `internal/infra/logging`：按天日志文件和日志清理。
 - `internal/scheduler`：定时任务注册和停止。
@@ -110,8 +111,10 @@ locales/
 - `internal/infra/auth`：Session、登录态和管理员保护中间件。
 - `internal/infra/captcha`：一次性图片验证码。
 - `internal/infra/i18n`：JSON 语言包加载和请求语言识别。
+- `internal/infra/view`：按 pages、admin 等范围解析、缓存和渲染模板，并提供通用模板函数。
+- `internal/infra/validate`：通用字符串、邮箱、电话、密码、URL、域名和 IPv4 校验；密码策略错误通过 `apperror` 返回可翻译的错误码。
 - `internal/infra/mail`：Resend 邮件发送封装。
-- `web/templates/`：Go `html/template` 页面模板。
+- `web/templates/pages/`、`web/templates/admin/`：按范围组织的 Go `html/template` 页面；布局和局部模板分别放在范围内的 `layouts/`、`partials/`。
 - `web/static/images/`、`web/static/scripts/`、`web/static/styles/`：图片、脚本和样式等静态资源。
 - `web/`：Web 层目录约定说明；程序入口仍在 `cmd/web`。
 
@@ -215,11 +218,7 @@ web/static/
 
 例如 `web/static/styles/app.css` 的浏览器地址是 `/static/styles/app.css`。模板文件放在 `web/templates/`。
 
-## 按业务组织代码
-
-每个业务模块按 `handler`、`service`、`repository`、`model` 组织。一个页面需要同时读取新闻和用户时，可以在该业务的 Service 中组合多个 Repository；如果为了页面查询方便需要在 `news/repository` 中增加用户查询方法，也可以保留，这是业务边界优先的取舍。不要为了追求目录“绝对不重复”而让 Handler 直接跨层访问数据库；重复的查询封装应在确认多个业务都复用后，再提取到共享模块。
-
-新闻同时有前台和后台页面时，推荐复用 `model`、`service`、`repository`，分开访问端 Handler 和路由：前台使用 `/news`、`/news/{id}`，后台使用 `/admin/news`、`/admin/news/{id}`，后台路由统一挂载管理员 Session 中间件。
+新闻前台和后台共用 `model`、`service`、`repository`，并由不同 Handler 提供页面；后台新闻路由统一挂载管理员 Session 中间件。新增代码时依赖方向保持为 `handler → service → repository → model`，基础设施由入口组装后注入。
 
 ## 测试
 
